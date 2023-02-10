@@ -1,0 +1,38 @@
+server {
+    server_name _; 
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+
+    # ssl 인증서는 클라와 서버간의 통신을 제3자가 보증해주는 전자화된 문서다.
+    # 클라가 서버에게 접속 -> 서버가 클라에게 인증서 정보 전달 -> 클라는 인증서의 신뢰성 검증 
+    # 장점으로는 1.통신 내용이 제3자에게 노출되는 것을 막는다. 2. 클라가 접속하려는 서버가 안전하고 신뢰할 수 있는지 판단 가능 3. 통신 내용의 악의적 변경 감지
+    
+    # 대칭키 : 동일한 키로 암호화 및 복호화를 같이할 수 있는 방식
+    # 대칭키의 단점은 암호를 주고 받다가 대칭키를 공격자가 탈취하면 공격자는 암호 내용을 복호화할 수 있다.
+
+    # 공개키 : 대칭키 단점을 보완하기 위해 나왔다. 두 개의 키를 갖는데 한 개는 비공개키, 나머지 한 개는 공개키로 지정한다.
+    # 비공개키는 본인이 소유하고, 공개키를 타인에게 제공 공개키를 받은 타인이 공개키로 정보를 암호화. 암호화한 정보를 비공개키를 가진 타인에게 전송.
+    # 비공개키를 가진 타인은 암호화된 정보를 비공개키로 복호화 한다. 
+    ssl_certificate /etc/nginx/certificate/nginx-certificate.crt; #발급한 대칭키 위치
+    ssl_certificate_key /etc/nginx/certificate/nginx.key; #발급한 개인키 위치(private)
+    ssl_protocols TLSv1.2 TLSv1.3; #ssl프로토콜 설정
+
+    index index.php;
+
+    root /var/www/html; #루트 경로
+
+    location / {
+        # 모든 입력 경로는 아래의 테스트를 패스해야 한다.
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                try_files $uri $uri/ =404;
+        }  
+
+  location ~ \.php$ {
+        # 모든 .php확장자 경로는 아래의 테스트를 패스해야 한다.
+
+        include snippets/fastcgi-php.conf;
+		fastcgi_param SCRIPT_FILENAME /var/www/html/$fastcgi_script_name;
+		fastcgi_pass wordpress:9000;
+    }
+}

@@ -1,0 +1,74 @@
+
+version: '3'
+
+volumes:
+  wordpress-volume:
+    driver: local 
+    driver_opts:
+      type: none
+      device: /home/hyunjung/data/wordpress 
+      o: bind 
+  database-volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/hyunjung/data/mariadb
+      o: bind
+
+services:
+  mariadb:
+    image: mariadb 
+    build:
+      context: ./requirements/mariadb
+      dockerfile: ./Dockerfile 
+    container_name: mariadb 
+    hostname: mariadb
+    # restart: always #비정상 종료에도 리부팅
+    expose:
+      - "3306" 
+    volumes:
+      - database-volume:/var/lib/mysql 
+    networks:
+      - root-network
+  nginx:
+    image: nginx
+    build:
+      #빌드하는 위치 설정
+      context: ./requirements/nginx
+      dockerfile: ./Dockerfile
+    container_name: nginx
+    hostname: nginx 
+    restart: always 
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress-volume:/var/www/html/
+    depends_on:
+      - wordpress
+    env_file:
+      - .env
+    networks:
+      - root-network
+  wordpress:
+    image: wordpress 
+    build:
+      context: ./requirements/wordpress
+      dockerfile: ./Dockerfile
+    container_name: wordpress
+    hostname: wordpress
+    restart: always
+    expose:
+      - "9000"
+    volumes:
+      - wordpress-volume:/var/www/html/
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    networks:
+      - root-network
+
+networks:
+  root-network:
+    
+    driver: bridge 
